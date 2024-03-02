@@ -14,10 +14,10 @@ class DoctorProfileView(APIView):
         serializer = DoctorSerializer(doctor)
         return Response(serializer.data)
 
-    def post(self, request):
+    def put(self, request):
         doctor = Doctor.objects.get(user=request.user)
         serializer = DoctorSerializer(doctor, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=400)
