@@ -5,6 +5,7 @@ from .utils import send_activation_code
 
 User = get_user_model()
 
+
 class RegistrationSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(min_length=8, required=True)
@@ -31,6 +32,7 @@ class RegistrationSerializer(serializers.Serializer):
         send_activation_code(user.email, user.activation_code)
         return user
 
+
 class ActivationSerializer(serializers.Serializer):
     email = serializers.CharField()
     code = serializers.CharField()
@@ -49,6 +51,7 @@ class ActivationSerializer(serializers.Serializer):
         user.is_active = True
         user.activation_code = ''
         user.save()
+
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -71,79 +74,3 @@ class LoginSerializer(serializers.Serializer):
             attrs['user'] = user
         return attrs
 
-class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(min_length=8, required=True)
-    new_password = serializers.CharField(min_length=8, required=True)
-    new_password_confirm = serializers.CharField(min_length=8, required=True)
-
-    def validate_old_password(self, old_pass):
-        user = self.context.get('request').user
-        if not user.check_password(old_pass):
-            raise serializers.ValidationError('Enter the correct password')
-        return old_pass
-
-    def validate(self, attrs):
-        new_pass1 = attrs.get('new_password')
-        new_pass2 = attrs.get('new_password_confirm')
-        old_pass = attrs.get('old_password')
-
-        if new_pass1 != new_pass2:
-            raise serializers.ValidationError('Passwords do not match')
-
-        if old_pass == new_pass1:
-            raise serializers.ValidationError('Passwords match')
-
-        return attrs
-
-    def set_new_password(self):
-        new_password = self.validated_data.get('new_password')
-        user = self.context.get('request').user
-        user.set_password(new_password)
-        user.save()
-
-class ForgotPasswordSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-
-    def validate_email(self, email):
-        if not User.objects.filter(email=email):
-            raise serializers.ValidationError('User not found')
-        return email
-
-    def send_verification_email(self):
-        email = self.validated_data.get('email')
-        user = User.objects.get(email=email)
-        user.create_activation_code()
-        send_mail(
-            'Password Recovery',
-            f'Your recovery code: {user.activation_code}',
-            'test@gmail.com',
-            [email]
-        )
-
-class ForgotPasswordCompleteSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    code = serializers.CharField(required=True)
-    password = serializers.CharField(required=True, min_length=8)
-    password_confirm = serializers.CharField(required=True, min_length=8)
-
-    def validate(self, attrs):
-        email = attrs.get('email')
-        code = attrs.get('code')
-        p1 = attrs.get('password')
-        p2 = attrs.get('password_confirm')
-
-        if not User.objects.filter(email=email, activation_code=code).exists():
-            raise serializers.ValidationError('User not found')
-
-        if p1 != p2:
-            raise serializers.ValidationError('Passwords do not match')
-        
-        return attrs
-
-    def set_new_password(self):
-        email = self.validated_data.get('email')
-        password = self.validated_data.get('password')
-        user = User.objects.get(email=email)
-        user.set_password(password)
-        user.activation_code = ''
-        user.save()

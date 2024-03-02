@@ -9,6 +9,7 @@ from .serializers import *
 
 logger = logging.getLogger(__name__)
 
+
 class RegistrationView(APIView):
 
     @swagger_auto_schema(request_body=RegistrationSerializer)
@@ -21,6 +22,7 @@ class RegistrationView(APIView):
         except Exception as e:
             logger.error(f'An error occurred: {e}')
             return Response('An error occurred during registration', status=500)
+
 
 class ActivationView(APIView):
 
@@ -35,8 +37,10 @@ class ActivationView(APIView):
             logger.error(f'An error occurred: {e}')
             return Response('An error occurred during activation', status=500)
 
+
 class LoginView(ObtainAuthToken):
     serializer_class = LoginSerializer
+
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
@@ -50,42 +54,3 @@ class LogoutView(APIView):
             logger.error(f'An error occurred: {e}')
             return Response('An error occurred during logout', status=500)
 
-class ChangePasswordView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(request_body=ChangePasswordSerializer)
-    def post(self, request):
-        try:
-            serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            serializer.set_new_password()
-            return Response('Password has been changed', status=200)
-        except Exception as e:
-            logger.error(f'An error occurred: {e}')
-            return Response('An error occurred during password change', status=500)
-
-class ForgotPasswordView(APIView):
-
-    @swagger_auto_schema(request_body=ForgotPasswordSerializer)
-    def post(self, request):
-        try:
-            serializer = ForgotPasswordSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            serializer.send_verification_email()
-            return Response('Password recovery code has been sent to your email', status=200)
-        except Exception as e:
-            logger.error(f'An error occurred: {e}')
-            return Response('An error occurred during password recovery', status=500)
-
-class ForgotPasswordCompleteView(APIView):
-
-    @swagger_auto_schema(request_body=ForgotPasswordCompleteSerializer)
-    def post(self, request):
-        try:
-            serializer = ForgotPasswordCompleteSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            serializer.set_new_password()
-            return Response('Password has been changed', status=200)
-        except Exception as e:
-            logger.error(f'An error occurred: {e}')
-            return Response('An error occurred during password change', status=500)
